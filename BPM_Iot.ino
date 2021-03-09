@@ -1,72 +1,57 @@
-#include <Wire.h>
-#include "MAX30100_PulseOximeter.h"
-#include <Blynk.h>
-#include "ESP8266WiFi.h"
+/*************************************************************
+visit for this project https://nhjamali.blogspot.com/2021/03/patient-telemetry-monitoring-system.html
+visit https://nhjamali.blogspot.com/ for more projects
+App project setup:
+    Value Display widget attached to V7
+    Value Display widget attached to V8
+ *************************************************************/
+#include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
-#include <SimpleTimer.h>
+#include <Wire.h>
+#include <MAX30100_PulseOximeter.h>
 
-#define BLYNK_PRINT Serial
-#define REPORTING_PERIOD_MS 1000
-SimpleTimer timer;
+char auth[] = "YourAuthToken";              // You should get Auth Token in the Blynk App. Go to the Project Settings (nut icon).
+char ssid[] = "YourNetworkName";            // Your WiFi credentials.
+char pass[] = "YourPassword";               // Set password to "" for open networks.
 
-char auth[] = "ZmydeN3e0sCTTTAmVz_2P10S2PEXlxSO";             // You should get Auth Token in the Blynk App.
-char ssid[] = "Wifi name";                                     // Your WiFi credentials.
-char pass[] = "Password!";
-
-// Connections : SCL PIN - D1 , SDA PIN - D2 , INT PIN - D0
 PulseOximeter pox;
+BlynkTimer timer;
 
-float BPM, SpO2;
-uint32_t tsLastReport = 0;
-
-void setup()
+// This function sends ESP8266's up time every second to Virtual Pin (7).
+// In the app, Widget's reading frequency should be set to PUSH. This means
+// that you define how often to send data to Blynk App.
+void sendSensor()
 {
-    Serial.begin(115200);
-    pinMode(16, OUTPUT);
-    Blynk.begin(auth, ssid, pass);
-    timer.setInterval(2000, sendUptime);
-    Serial.print("Initializing Pulse Oximeter..");
-
-    if (!pox.begin())
+  float BPM = pox.getHeartRate();
+  float SpO2 = pox.getSpO2();
+  
+  if (!pox.begin())
     {
-         Serial.println("FAILED");
+         Serial.println("FAILED to connect with Pulse-Oximeter MAX30100");
          for(;;);
     }
     else
     {
-         Serial.println("SUCCESS");
-//        pox.setOnBeatDetectedCallback(onBeatDetected);
+         Serial.println("Successfully connected to sensor");
     }
-
-    // The default current for the IR LED is 50mA and it could be changed by uncommenting the following line.
-     //pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
-
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  Blynk.virtualWrite(V7, BPM);
+  Blynk.virtualWrite(V8, SpO2);
 }
 
-void sendUptime()
+void setup()
 {
-  
+  // Debug console
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  // Setup a function to be called every second
+  timer.setInterval(1000L, sendSensor);
 }
 
 void loop()
 {
-    pox.update();
-    Blynk.run();
-    timer.run();
-
-    BPM = pox.getHeartRate();
-    SpO2 = pox.getSpO2();
-    if (millis() - tsLastReport > REPORTING_PERIOD_MS)
-    {
-        Serial.print("Heart rate:");
-        Serial.print(BPM);
-        Serial.print(" bpm / SpO2:");
-        Serial.print(SpO2);
-        Serial.println(" %");
-
-        Blynk.virtualWrite(V7, BPM);
-        Blynk.virtualWrite(V8, SpO2);
-
-        tsLastReport = millis();
-    }
+  Blynk.run();
+  timer.run();
+  pox.update();
 }
