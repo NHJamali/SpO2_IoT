@@ -3,21 +3,15 @@
 #include <Blynk.h>
 #include "ESP8266WiFi.h"
 #include <BlynkSimpleEsp8266.h>
-#include "DHT.h"
 #include <SimpleTimer.h>
 
 #define BLYNK_PRINT Serial
 #define REPORTING_PERIOD_MS 1000
-#define DHTTYPE DHT11
-#define dht_dpin 14
-DHT dht(dht_dpin, DHTTYPE); 
 SimpleTimer timer;
 
 char auth[] = "ZmydeN3e0sCTTTAmVz_2P10S2PEXlxSO";             // You should get Auth Token in the Blynk App.
-char ssid[] = "Effordea.com";                                     // Your WiFi credentials.
-char pass[] = "gr@bApep$!";
-float t;                                   // Declare the variables 
-float h;
+char ssid[] = "Wifi name";                                     // Your WiFi credentials.
+char pass[] = "Password!";
 
 // Connections : SCL PIN - D1 , SDA PIN - D2 , INT PIN - D0
 PulseOximeter pox;
@@ -30,7 +24,6 @@ void setup()
     Serial.begin(115200);
     pinMode(16, OUTPUT);
     Blynk.begin(auth, ssid, pass);
-    dht.begin();
     timer.setInterval(2000, sendUptime);
     Serial.print("Initializing Pulse Oximeter..");
 
